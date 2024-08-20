@@ -1,4 +1,4 @@
-# AMS Database Management
+# AMS USER Management
 
 This repository manages the Backend for the AMS (Appointment Management System) project.
 
