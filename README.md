@@ -5,7 +5,7 @@ This repository manages the Backend for the AMS (Appointment Management System) 
 ## Initial Folder Structure
 
 ```
-AMS-DATABASE-MANAGEMENT/
+AMS-USER-MANAGEMENT/
 ├── app/
 │   ├── config/
 |   |   └──configuration.py
