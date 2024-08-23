@@ -4,7 +4,7 @@ class UserCreate(BaseModel):
     first_name: str
     last_name: str
     email: EmailStr
-    password: constr(min_length=8) # type: ignore
+    password: constr(min_length=8)
     confirm_password: str
 
     class Config:
