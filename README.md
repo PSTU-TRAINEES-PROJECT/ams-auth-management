@@ -62,3 +62,32 @@ AMS-USER-MANAGEMENT/
    python -m venv venv
    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
    ```
+
+### Docker Setup
+
+#### 1. Create a `.env` file:
+
+In the root directory (outside of the `app` folder), create a `.env` file with the following content:
+
+```env
+PROJECT_TITLE="AMS USER Management"
+BACKEND_PORT=8000
+IS_RELOAD=true
+```
+
+#### 2. Build and Run with Docker:
+
+Use the following commands to build and run the Docker containers:
+
+```bash
+docker-compose build
+docker-compose up
+```
+
+Alternatively, you can use:
+
+```bash
+docker-compose up --build
+```
+
+Visit the application at [http://localhost:8000/](http://localhost:8000/).
