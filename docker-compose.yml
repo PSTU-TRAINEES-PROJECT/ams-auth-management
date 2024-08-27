@@ -13,7 +13,7 @@ services:
     networks:
       - ams-network
     ports:
-      - 7001:8000
+      - 7001:7001
     env_file:
       - .env
 
