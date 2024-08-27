@@ -1,5 +1,5 @@
 services:
-  user-management:
+  auth:
     build:
       context: app
       dockerfile: Dockerfile
