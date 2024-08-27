@@ -8,5 +8,5 @@ async def self_profile(
 ):
     return {
         "full_name": "Python Developer",
-        "user_name": f"pythonista"
+        "user_name": f"pythonista yes!"
     }
