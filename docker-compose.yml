@@ -1,23 +1,18 @@
-services:
-  auth:
-    build:
-      context: app
-      dockerfile: Dockerfile
-    restart: always
-    tty: true
-    volumes:
-      - ./app:/app/:cached
-      - ./.docker/.ipython:/root/.ipython:cached
-    environment:
-      PYTHONPATH: .
-    networks:
-      - ams-network
-    ports:
-      - 7001:7001
-    env_file:
-      - .env
+version: "3.8"
 
-networks:
-  ams-network:
-    name: ams-network
-    driver: bridge
+services:
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+
+    ports:
+      - 8000:8000
+
+    env_file: .env
+
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+
+    volumes:
+      - ./app:/app
