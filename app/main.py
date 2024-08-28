@@ -23,8 +23,8 @@ app.include_router(
 
 
 # Register the events
-app.add_event_handler("startup", auth.on_startup)
-app.add_event_handler("shutdown", auth.on_shutdown)
+# app.add_event_handler("startup", auth.on_startup)
+# app.add_event_handler("shutdown", auth.on_shutdown)
 
 
 if __name__ == "__main__":

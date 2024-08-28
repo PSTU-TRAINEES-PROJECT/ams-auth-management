@@ -11,7 +11,7 @@ class Config(BaseSettings):
     
 
     class Config:
-        env_file = ".env"
+        env_path = ".env"
 
 
 @lru_cache()
