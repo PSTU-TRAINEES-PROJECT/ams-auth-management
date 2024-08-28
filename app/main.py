@@ -2,9 +2,9 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core import const, auth
-
 from config import get_config
 from routers.api.v1 import user_router
+
 
 app = FastAPI(
     title=get_config().project_title,

@@ -4,11 +4,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 class Config(BaseSettings):
     project_title: str
     backend_port: int
     is_reload: bool
+    
 
     class Config:
         env_path = ".env"
