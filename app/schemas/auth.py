@@ -1,12 +1,10 @@
 from pydantic import BaseModel, EmailStr, constr
-from sqlalchemy import Column, DateTime, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
-import datetime
-import pytz
 
 class Token(BaseModel):
+    message: str
     access_token: str
     token_type: str
+    expire_in: int
 
 class TokenData(BaseModel):
     email: EmailStr | None = None

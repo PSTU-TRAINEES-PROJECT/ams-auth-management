@@ -1,4 +1,3 @@
-from pydantic import BaseModel, EmailStr, constr
 from sqlalchemy import Column, DateTime, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 import datetime
