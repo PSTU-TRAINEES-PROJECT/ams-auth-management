@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from repository.database import get_db
-from schemas.users import UserCreate
+from schemas.auth import UserCreate, UserLogin, Token
 from repository.user_repository import UserRepository
+from services.auth import LoginService
 from services.users import UserService
 from sqlalchemy.ext.asyncio import  AsyncSession
 
@@ -22,3 +23,18 @@ async def signup(user: UserCreate, db: AsyncSession = Depends(get_db)):
 async def get_users(db: AsyncSession = Depends(get_db)):
     users = await user_service.get_all_users(db)
     return users
+
+
+login_router = APIRouter()
+
+@login_router.post("/login", response_model=Token)
+async def login(user: UserLogin, db: AsyncSession = Depends(get_db)):
+    login_service = LoginService(repository=UserRepository())
+    token = await login_service.authenticate_user(user, db)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return {"access_token": token, "token_type": "bearer"}

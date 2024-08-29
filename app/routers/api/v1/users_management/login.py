@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from repository.database import get_db
-from services.login import LoginService
+from services.auth import LoginService
 from repository.user_repository import UserRepository
-from schemas.login import UserLogin, Token
+from schemas.auth import UserLogin, Token
 
 login_router = APIRouter()
 
@@ -17,4 +17,4 @@ async def login(user: UserLogin, db: AsyncSession = Depends(get_db)):
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return {"access_token": token, "token_type": "bearer","message": "Login successful" }
+    return {"access_token": token, "token_type": "bearer"}

@@ -3,8 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core import const, auth
 from config import get_config
-from routers.api.v1 import user_router
-from routers.api.v1.users_management import login_router
+from routers.api.v1 import user_router, login_router
 
 
 app = FastAPI(

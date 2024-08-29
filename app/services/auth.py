@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from utils.helpers.jwt_handler import create_access_token
 from utils.helpers.converters import verify_password
 from repository.user_repository import UserRepository
-from schemas.login import UserLogin
+from schemas.auth import UserLogin
 
 class LoginService:
     def __init__(self, repository: UserRepository):

@@ -1,6 +1,6 @@
 from utils.helpers.converters import hash_password, verify_password
 from repository.user_repository import UserRepository
-from schemas.users import UserCreate
+from schemas.auth import UserCreate
 from sqlalchemy.ext.asyncio import  AsyncSession
 
 class UserService:
