@@ -8,6 +8,10 @@ class Config(BaseSettings):
     project_title: str
     backend_port: int
     is_reload: bool
+    database_url: str
+    jwt_secret_key: str
+    access_token_expire_minutes: int
+    database_url: str
     
 
     class Config:

@@ -23,6 +23,12 @@ class UserRepository:
         user = result.scalars().first()
         return user
     
+    async def get_user_by_username(self, username: str, db: AsyncSession) -> dict:
+        query = select(User).where(User.username == username)
+        result = await db.execute(query)
+        user = result.scalars().first()
+        return user
+    
     async def get_all_users(self, db: AsyncSession) -> list[User]:
         query = select(User)
         result = await db.execute(query)

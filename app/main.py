@@ -3,12 +3,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core import const, auth
 from config import get_config
-from routers.api.v1 import user_router
+from routers.api.v1 import user_router, auth_router
 
 
 app = FastAPI(
     title=get_config().project_title,
     docs_url="/api/docs",
+    debug=True
 )
 
 app.add_middleware(
@@ -18,7 +19,13 @@ app.add_middleware(
 app.include_router(
     user_router,
     prefix=const.API_STR,
-    tags=["users_management"]
+    tags=["Users Management"]
+)
+
+app.include_router(
+    auth_router,
+    prefix=const.API_STR,
+    tags=["Auth Management"]
 )
 
 

@@ -1,9 +1,11 @@
-from sqlalchemy import inspect, text
+from sqlalchemy import inspect
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncConnection
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
+from config import get_config
 
-DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/ams-database"
+
+DATABASE_URL = get_config().database_url
 
 async_engine = create_async_engine(DATABASE_URL, echo=True, future=True)
 
