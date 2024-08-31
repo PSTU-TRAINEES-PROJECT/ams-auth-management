@@ -1,8 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from utils.helpers.jwt_handler import create_access_token
+from utils.helpers.jwt_handler import create_access_token, verify_token, create_email_verification_token
 from utils.helpers.converters import hash_password, verify_password
 from repository.user_repository import UserRepository
 from schemas.auth import UserCreate, UserLogin
+from utils.email.send_email import send_verification_email
 
 class AuthService:
     def __init__(self, repository: UserRepository):
@@ -28,10 +29,33 @@ class AuthService:
             "password": hashed_password,
         }
 
-        return await self.repository.save_user(user_data, db)
+        new_user = await self.repository.save_user(user_data, db)
+        
+        verification_token = create_email_verification_token(user.email)
+        await send_verification_email(user.email, verification_token)
+
+        return new_user
 
     async def authenticate_user(self, login_data: UserLogin, db: AsyncSession):
         user = await self.repository.get_user_by_email(login_data.email, db)
+        
+        if not user.email_verified:
+            raise ValueError("Please verify your email first")
+        
         if not user or not verify_password(login_data.password, user.password_hash):
-            return None, None
-        return create_access_token(user.email)
+            raise ValueError("Invalid email or password")
+        
+        token, expire_in = create_access_token(user.email)
+        return token, expire_in
+    
+    async def verify_email(self, token: str, db: AsyncSession):
+        email = verify_token(token)
+        if not email:
+            raise ValueError("Invalid token")
+        
+        user = await self.repository.get_user_by_email(email, db)
+        if not user:
+            raise ValueError("User not found")
+
+        await self.repository.update_user_email_verification(user, db)
+

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 import datetime
 import pytz
@@ -17,6 +17,7 @@ class User(Base):
     first_name = Column(String(50), nullable=True)
     last_name = Column(String(50), nullable=True)
     password_hash = Column(String(255))
+    email_verified = Column(Boolean, default=False)
     mobile = Column(String(20), nullable=True)
     created_at = Column(DateTime(timezone=True), default=current_time, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=current_time, nullable=False, onupdate=current_time)

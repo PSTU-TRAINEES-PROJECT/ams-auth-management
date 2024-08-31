@@ -17,7 +17,7 @@ class UserRepository:
         await db.refresh(new_user)
         return {"id": new_user.id, "email": new_user.email}
 
-    async def get_user_by_email(self, email: str, db: AsyncSession) -> dict:
+    async def get_user_by_email(self, email: str, db: AsyncSession) -> User:
         query = select(User).where(User.email == email)
         result = await db.execute(query)
         user = result.scalars().first()
@@ -34,5 +34,11 @@ class UserRepository:
         result = await db.execute(query)
         users = result.scalars().all()
         return users
+
+    async def update_user_email_verification(self, user: User, db: AsyncSession):
+        user.email_verified = True
+        await db.commit()
+        await db.refresh(user)
+
 
 
