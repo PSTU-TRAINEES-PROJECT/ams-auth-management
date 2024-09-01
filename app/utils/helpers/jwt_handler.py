@@ -10,21 +10,21 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = get_config().access_token_expire_minutes
 EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES = get_config().email_verification_token_expire_minutes
 
-def create_access_token(email: str):
-    to_encode = {"sub": email}
+def create_access_token(user_id: int):
+    to_encode = {"sub": user_id}
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt, int(expire.timestamp())
 
-def create_email_verification_token(email: str):
-    to_encode = {"sub": email}
+def create_email_verification_token(user_id: int):
+    to_encode = {"sub": user_id}
     expire = datetime.utcnow() + timedelta(minutes=EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def verify_token(token: str) -> EmailStr:
+def verify_token(token: str) -> int:
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
         if payload.get("sub") is None:
