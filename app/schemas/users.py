@@ -1,7 +1,8 @@
-from sqlalchemy import Column, DateTime, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 import datetime
 import pytz
+from utils.helpers.enums import Status
 
 Base = declarative_base()
 
@@ -17,8 +18,11 @@ class User(Base):
     first_name = Column(String(50), nullable=True)
     last_name = Column(String(50), nullable=True)
     password_hash = Column(String(255))
+    email_verified = Column(Boolean, default=False)
     mobile = Column(String(20), nullable=True)
     created_at = Column(DateTime(timezone=True), default=current_time, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=current_time, nullable=False, onupdate=current_time)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
+    
+    status = Column(Enum(Status), nullable=False, default=Status.INACTIVE.value, server_default=Status.INACTIVE.value)
 

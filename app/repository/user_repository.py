@@ -1,9 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from utils.helpers.enums import Status
 from schemas.users import User
 from sqlalchemy.future import select
 
 class UserRepository:
-    async def save_user(self, user_data: dict, db : AsyncSession) -> dict:
+    async def create_user(self, user_data: dict, db : AsyncSession) -> dict:
         new_user = User(
             username=user_data.get("username"),
             first_name=user_data.get("first_name"),
@@ -17,7 +18,7 @@ class UserRepository:
         await db.refresh(new_user)
         return {"id": new_user.id, "email": new_user.email}
 
-    async def get_user_by_email(self, email: str, db: AsyncSession) -> dict:
+    async def get_user_by_email(self, email: str, db: AsyncSession) -> User:
         query = select(User).where(User.email == email)
         result = await db.execute(query)
         user = result.scalars().first()
@@ -29,10 +30,32 @@ class UserRepository:
         user = result.scalars().first()
         return user
     
+    async def get_user_by_user_id(self, user_id: int, db: AsyncSession) -> User:
+        query = select(User).where(User.id == user_id)
+        result = await db.execute(query)
+        user = result.scalars().first()
+        return user
+    
     async def get_all_users(self, db: AsyncSession) -> list[User]:
         query = select(User)
         result = await db.execute(query)
         users = result.scalars().all()
         return users
+
+    async def update_user_email_verification(self, user: User, db: AsyncSession):
+        user.email_verified = True
+        await db.commit()
+        await db.refresh(user)
+    
+    async def update_user_status_to_active(self, user: User, db: AsyncSession):
+        user.status = Status.ACTIVE.value
+        await db.commit()
+        await db.refresh(user)
+    
+    async def update_user_status(self, user: User, status: Status, db: AsyncSession):
+        user.status = status
+        await db.commit()
+        await db.refresh(user)
+
 
 

@@ -1,10 +1,11 @@
+from typing import Optional
 from pydantic import BaseModel, EmailStr, constr
 
 class Token(BaseModel):
-    message: str
-    access_token: str
-    token_type: str
-    expire_in: int
+    message: Optional[str] = None
+    access_token: Optional[str] = None
+    token_type: Optional[str] = None
+    expire_in: Optional[int] = None
 
 class TokenData(BaseModel):
     email: EmailStr | None = None

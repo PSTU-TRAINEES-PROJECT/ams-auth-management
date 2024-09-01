@@ -12,6 +12,12 @@ class Config(BaseSettings):
     jwt_secret_key: str
     access_token_expire_minutes: int
     database_url: str
+    smtp_server: str
+    smtp_port: int
+    smtp_user: str
+    smtp_password: str
+    frontend_url: str
+    email_verification_token_expire_minutes: int
     
 
     class Config:
