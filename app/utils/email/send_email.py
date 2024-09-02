@@ -12,7 +12,7 @@ async def send_verification_email(email: str, token: str):
     message = MIMEMultipart()
     message["From"] = config.smtp_user
     message["To"] = email
-    message["Subject"] = "Email Verification"
+    message["Subject"] = "Email Verification From AMS"
 
     body = VERIFICATION_EMAIL_TEMPLATE.format(verification_url=verification_url)
 

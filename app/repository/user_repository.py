@@ -4,7 +4,7 @@ from schemas.users import User
 from sqlalchemy.future import select
 
 class UserRepository:
-    async def create_user(self, user_data: dict, db : AsyncSession) -> dict:
+    async def create_user(self, user_data: dict, db : AsyncSession) -> User:
         new_user = User(
             username=user_data.get("username"),
             first_name=user_data.get("first_name"),
@@ -16,7 +16,7 @@ class UserRepository:
         db.add(new_user)
         await db.commit()
         await db.refresh(new_user)
-        return {"id": new_user.id, "email": new_user.email}
+        return new_user
 
     async def get_user_by_email(self, email: str, db: AsyncSession) -> User:
         query = select(User).where(User.email == email)
@@ -24,7 +24,7 @@ class UserRepository:
         user = result.scalars().first()
         return user
     
-    async def get_user_by_username(self, username: str, db: AsyncSession) -> dict:
+    async def get_user_by_username(self, username: str, db: AsyncSession) -> User:
         query = select(User).where(User.username == username)
         result = await db.execute(query)
         user = result.scalars().first()
