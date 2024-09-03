@@ -26,3 +26,6 @@ async def verify_email_token(token: str, db: AsyncSession = Depends(get_db)):
     return await auth_service.verify_email_token(token, db)
 
 
+@auth_router.post("/refresh-token")
+async def refresh_token(refresh_token: str, db: AsyncSession = Depends(get_db)):
+    return await auth_service.refresh_access_token(refresh_token, db)

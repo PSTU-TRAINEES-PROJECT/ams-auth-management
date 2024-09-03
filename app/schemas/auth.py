@@ -4,6 +4,7 @@ from pydantic import BaseModel, EmailStr, constr
 class Token(BaseModel):
     message: Optional[str] = None
     access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
     token_type: Optional[str] = None
     expire_in: Optional[int] = None
 

@@ -9,6 +9,7 @@ JWT_SECRET_KEY = get_config().jwt_secret_key
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = get_config().access_token_expire_minutes
 EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES = get_config().email_verification_token_expire_minutes
+REFRESH_TOKEN_EXPIRE_DAYS = get_config().refresh_token_expire_days
 
 def create_access_token(user_id: int):
     to_encode = {"sub": user_id}
@@ -23,6 +24,14 @@ def create_email_verification_token(user_id: int):
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+    
+
+def create_refresh_token(user_id: int):
+    expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode = {"sub": str(user_id), "exp": expire}
+    encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
 
 def verify_token(token: str) -> int:
     try:

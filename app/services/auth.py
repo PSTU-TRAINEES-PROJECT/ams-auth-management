@@ -1,12 +1,17 @@
 from http import HTTPStatus
 from fastapi.responses import JSONResponse
+import jwt
+from fastapi import HTTPException
+from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.helpers.enums import Status
-from utils.helpers.jwt_handler import create_access_token, verify_token, create_email_verification_token
+from utils.helpers.jwt_handler import JWT_SECRET_KEY, ALGORITHM
+from utils.helpers.jwt_handler import create_access_token, verify_token, create_refresh_token, create_email_verification_token
 from utils.helpers.converters import hash_password, verify_password
 from repository.user_repository import UserRepository
 from schemas.auth import UserCreate, UserLogin
 from utils.email.send_email import send_verification_email
+from config import get_config
 
 class AuthService:
     def __init__(self, repository: UserRepository):
@@ -83,9 +88,10 @@ class AuthService:
                     content={"message": "Invalid password"}
                 )
             
-            token, expire_in = create_access_token(user.id)
+            access_token, expire_in = create_access_token(user.id)
+            refresh_token = create_refresh_token(user.id)
             
-            if not token:
+            if not access_token:
                 return JSONResponse(
                     status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
                     content={"message": "Could not create access token. Please try again"}
@@ -93,7 +99,13 @@ class AuthService:
             
             return JSONResponse(
                 status_code=HTTPStatus.OK, 
-                content={"message": "Login successful", "access_token": token, "token_type": "bearer", "expire_in": expire_in}
+                content={
+                    "message": "Login successful", 
+                    "access_token": access_token, 
+                    "refresh_token": refresh_token,  # Add refresh token here
+                    "token_type": "bearer", 
+                    "expire_in": expire_in
+                }
             )
         except Exception as e:
             return JSONResponse(
@@ -140,3 +152,25 @@ class AuthService:
                 content={"message": f"Internal server error. ERROR: {e}"}
             )
 
+
+    async def refresh_access_token(self, refresh_token: str, db: AsyncSession):
+        try:
+            payload = jwt.decode(refresh_token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
+            user_id = payload.get("sub")
+            
+            # Ensure user_id is a string and then convert to integer
+            if not user_id or not user_id.isdigit():
+                raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Invalid token subject")
+            
+            user_id = int(user_id)
+
+            user = await self.repository.get_user_by_user_id(user_id, db)
+
+            if user is None:
+                raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="User not found")
+
+            access_token, expire_in = create_access_token(user_id)
+            return {"access_token": access_token, "token_type": "bearer", "expire_in": expire_in}
+
+        except JWTError as e:
+            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=f"Invalid token: {str(e)}")
