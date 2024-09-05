@@ -1,9 +1,8 @@
 from http import HTTPStatus
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from core.auth import create_access_token, create_email_verification_token, hash_password, verify_password, verify_token
 from utils.helpers.enums import Status
-from utils.helpers.jwt_handler import create_access_token, verify_token, create_email_verification_token
-from utils.helpers.converters import hash_password, verify_password
 from repository.user_repository import UserRepository
 from schemas.auth import UserCreate, UserLogin
 from utils.email.send_email import send_verification_email
