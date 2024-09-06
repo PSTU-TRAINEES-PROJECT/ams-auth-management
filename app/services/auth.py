@@ -1,62 +1,15 @@
-from datetime import datetime, timedelta
-from pydantic import EmailStr
-from config import get_config
-from http import HTTPStatus
-from fastapi.responses import JSONResponse
-import jwt
 from fastapi import HTTPException
-from jose import JWTError, jwt
+from http import HTTPStatus
+import jwt
+from core.auth import JWT_SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES,REFRESH_TOKEN_EXPIRE_DAYS
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from utils.helpers.enums import Status
-from utils.helpers.converters import hash_password, verify_password
-from repository.user_repository import UserRepository  # Add this line
-from schemas.auth import UserCreate, UserLogin
+from core.auth import create_access_token, create_email_verification_token, hash_password, verify_password, verify_token, create_refresh_token
 from utils.email.send_email import send_verification_email
-from config import get_config
+from utils.helpers.enums import Status
+from repository.user_repository import UserRepository
+from schemas.auth import UserCreate, UserLogin
 
-
-# JWT configuration
-JWT_SECRET_KEY = get_config().jwt_secret_key
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = get_config().access_token_expire_minutes
-EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES = get_config().email_verification_token_expire_minutes
-REFRESH_TOKEN_EXPIRE_DAYS = get_config().refresh_token_expire_days
-
-# JWT token creation and verification functions
-def create_access_token(user_id: int):
-    to_encode = {"sub": user_id}
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt, int(expire.timestamp())
-
-def create_email_verification_token(user_id: int):
-    to_encode = {"sub": user_id}
-    expire = datetime.utcnow() + timedelta(minutes=EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-def create_refresh_token(user_id: int):
-    expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    to_encode = {"sub": str(user_id), "exp": expire}
-    encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-def verify_token(token: str) -> int:
-    try:
-        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
-        if payload.get("sub") is None:
-            raise HTTPException(status_code=401, detail="Token is invalid")
-        return payload.get("sub")
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token has expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Token is invalid")
-
-
-# Rest of the AuthService class and methods as they were before
-# No need to import jwt handler functions anymore as they are now part of this file
 class AuthService:
     def __init__(self, repository: UserRepository):
         self.repository = repository
@@ -135,12 +88,6 @@ class AuthService:
             access_token, expire_in = create_access_token(user.id)
             refresh_token = create_refresh_token(user.id)
             
-            if not access_token:
-                return JSONResponse(
-                    status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-                    content={"message": "Could not create access token. Please try again"}
-                )
-            
             return JSONResponse(
                 status_code=HTTPStatus.OK, 
                 content={
@@ -182,7 +129,6 @@ class AuthService:
                 )
 
             await self.repository.update_user_email_verification(user, db)
-            
             await self.repository.update_user_status_to_active(user, db)
             
             return JSONResponse(
@@ -195,7 +141,6 @@ class AuthService:
                 content={"message": f"Internal server error. ERROR: {e}"}
             )
 
-
     async def refresh_access_token(self, refresh_token: str, db: AsyncSession):
         try:
             payload = jwt.decode(refresh_token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
@@ -205,7 +150,6 @@ class AuthService:
                 raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Invalid token subject")
             
             user_id = int(user_id)
-
             user = await self.repository.get_user_by_user_id(user_id, db)
 
             if user is None:
@@ -214,5 +158,7 @@ class AuthService:
             access_token, expire_in = create_access_token(user_id)
             return {"access_token": access_token, "token_type": "bearer", "expire_in": expire_in}
 
-        except JWTError as e:
-            raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=f"Invalid token: {str(e)}")
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="Refresh token expired")
+        except jwt.InvalidTokenError:
+            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="Invalid refresh token")
