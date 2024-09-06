@@ -1,14 +1,14 @@
-from fastapi import HTTPException
 from http import HTTPStatus
-import jwt
-from core.auth import JWT_SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES,REFRESH_TOKEN_EXPIRE_DAYS
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.auth import create_access_token, create_email_verification_token, hash_password, verify_password, verify_token, create_refresh_token
-from utils.email.send_email import send_verification_email
 from utils.helpers.enums import Status
 from repository.user_repository import UserRepository
 from schemas.auth import UserCreate, UserLogin
+from utils.email.send_email import send_verification_email
+import jwt
+from core.auth import JWT_SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
+
 
 class AuthService:
     def __init__(self, repository: UserRepository):
@@ -141,24 +141,46 @@ class AuthService:
                 content={"message": f"Internal server error. ERROR: {e}"}
             )
 
+
     async def refresh_access_token(self, refresh_token: str, db: AsyncSession):
         try:
             payload = jwt.decode(refresh_token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
             user_id = payload.get("sub")
             
             if not user_id or not user_id.isdigit():
-                raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Invalid token subject")
+                return JSONResponse(
+                    status_code=HTTPStatus.BAD_REQUEST,
+                    content={"message": "Invalid token subject"}
+                )
             
             user_id = int(user_id)
             user = await self.repository.get_user_by_user_id(user_id, db)
 
             if user is None:
-                raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="User not found")
+                return JSONResponse(
+                    status_code=HTTPStatus.NOT_FOUND,
+                    content={"message": "User not found"}
+                )
 
             access_token, expire_in = create_access_token(user_id)
-            return {"access_token": access_token, "token_type": "bearer", "expire_in": expire_in}
+            
+            return JSONResponse(
+                status_code=HTTPStatus.OK,
+                content={"access_token": access_token, "token_type": "bearer", "expire_in": expire_in}
+            )
 
         except jwt.ExpiredSignatureError:
-            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="Refresh token expired")
+            return JSONResponse(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                content={"message": "Refresh token expired"}
+            )
         except jwt.InvalidTokenError:
-            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="Invalid refresh token")
+            return JSONResponse(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                content={"message": "Invalid refresh token"}
+            )
+        except Exception as e:
+            return JSONResponse(
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                content={"message": f"Internal server error. ERROR: {e}"}
+            )
