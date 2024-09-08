@@ -15,6 +15,7 @@ REFRESH_TOKEN_EXPIRE_DAYS = get_config().refresh_token_expire_days
 
 
 
+
 async def on_startup():
     await check_database_connection()
     print("Application startup: Database connection checked.")
@@ -38,6 +39,7 @@ def create_access_token(user_id: int):
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt, int(expire.timestamp())
 
+
 def create_email_verification_token(user_id: int):
     to_encode = {"sub": user_id}
     expire = datetime.utcnow() + timedelta(minutes=EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES)
@@ -45,11 +47,13 @@ def create_email_verification_token(user_id: int):
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+
 def create_refresh_token(user_id: int):
     expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode = {"sub": str(user_id), "exp": expire}
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
 
 def verify_token(token: str) -> int:
     try:
@@ -61,3 +65,4 @@ def verify_token(token: str) -> int:
         raise HTTPException(status_code=401, detail="Token has expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Token is invalid")
+
