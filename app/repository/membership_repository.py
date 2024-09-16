@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from schemas.users import Membership
+from schemas.base import Membership
 
 class MembershipRepository:
     async def get_membership_by_user_id_and_role(self, user_id: int, role: str, db: AsyncSession) -> Membership:

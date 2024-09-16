@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.helpers.enums import Status
-from schemas.users import User
+from schemas.base import User
 from sqlalchemy.future import select
 
 class UserRepository:

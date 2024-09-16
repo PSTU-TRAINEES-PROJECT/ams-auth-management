@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from schemas.users import Organization
+from schemas.base import Organization
 from sqlalchemy.future import select
 
 class OrganizationRepository:
