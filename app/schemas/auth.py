@@ -14,6 +14,14 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+    class Config:
+        schema_extra = {
+            "example": {
+                "email": "johndoe@example.com",
+                "password": "strongpassword123"
+            }
+        }
+
 class UserCreate(BaseModel):
     username: str
     first_name: str

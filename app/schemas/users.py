@@ -1,10 +1,8 @@
-from sqlalchemy import Boolean, Column, DateTime, Enum, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, Integer, String
 import datetime
 import pytz
+from schemas.base import Base
 from utils.helpers.enums import Status
-
-Base = declarative_base()
 
 def current_time():
     return datetime.datetime.now(tz=pytz.timezone('UTC'))
@@ -27,6 +25,9 @@ class User(Base):
     status = Column(Enum(Status), nullable=False, default=Status.INACTIVE.value, server_default=Status.INACTIVE.value)
 
 
+    language_code = Column(String(10), ForeignKey('languages.code'), nullable=True)  # Nullable
+
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -40,5 +41,10 @@ class User(Base):
             "updated_at": self.updated_at.isoformat(),
             "deleted_at": self.deleted_at.isoformat() if self.deleted_at else None,
             "status": self.status,
+            "language_code": self.language_code if self.language_code else None
         }
+
+
+
+
 
