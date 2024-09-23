@@ -18,7 +18,7 @@ class Config(BaseSettings):
     smtp_password: str
     frontend_url: str
     email_verification_token_expire_minutes: int
-    
+    refresh_token_expire_days: int = 30     
 
     class Config:
         env_path = ".env"
