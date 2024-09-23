@@ -1,14 +1,16 @@
 from http import HTTPStatus
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from core.auth import create_access_token, create_email_verification_token, hash_password, verify_password, verify_token, create_refresh_token
+from core.auth import create_access_token, create_email_verification_token, hash_password, verify_password, \
+    verify_token, create_refresh_token
 
 from utils.helpers.enums import Status
 from repository.user_repository import UserRepository
 from schemas.auth import UserCreate, UserLogin
 from utils.email.send_email import send_verification_email
 import jwt
-from core.auth import JWT_SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
+from core.auth import JWT_SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES, \
+    REFRESH_TOKEN_EXPIRE_DAYS
 
 
 class AuthService:
@@ -18,21 +20,21 @@ class AuthService:
     async def create_user(self, user: UserCreate, db: AsyncSession):
         try:
             user.validate_passwords()
-            
+
             existing_user_by_email = await self.repository.get_user_by_email(user.email, db)
             if existing_user_by_email:
                 return JSONResponse(
-                    status_code=HTTPStatus.CONFLICT, 
+                    status_code=HTTPStatus.CONFLICT,
                     content={"message": f"User with email {user.email} already exists"}
                 )
 
             existing_user_by_username = await self.repository.get_user_by_username(user.username, db)
             if existing_user_by_username:
                 return JSONResponse(
-                    status_code=HTTPStatus.CONFLICT, 
+                    status_code=HTTPStatus.CONFLICT,
                     content={"message": f"User with username {user.username} already exists"}
                 )
-            
+
             hashed_password = hash_password(user.password)
 
             user_data = {
@@ -44,12 +46,12 @@ class AuthService:
             }
 
             new_user = await self.repository.create_user(user_data, db)
-            
+
             verification_token = create_email_verification_token(new_user.id)
             await send_verification_email(user.email, verification_token)
 
             return JSONResponse(
-                status_code=HTTPStatus.CREATED, 
+                status_code=HTTPStatus.CREATED,
                 content={"message": "User created successfully", "data": new_user.to_dict()}
             )
         except Exception as e:
@@ -64,7 +66,7 @@ class AuthService:
 
             if not user:
                 return JSONResponse(
-                    status_code=HTTPStatus.NOT_FOUND, 
+                    status_code=HTTPStatus.NOT_FOUND,
                     content={"message": "User not found"}
                 )
 
@@ -73,29 +75,29 @@ class AuthService:
                     status_code=HTTPStatus.FORBIDDEN,
                     content={"message": "Please verify your email first"}
                 )
-            
+
             if user.status == Status.INACTIVE.value:
                 return JSONResponse(
                     status_code=HTTPStatus.UNAUTHORIZED,
                     content={"message": "Your account is inactive"}
                 )
-            
+
             if not verify_password(login_data.password, user.password_hash):
                 return JSONResponse(
                     status_code=HTTPStatus.UNAUTHORIZED,
                     content={"message": "Invalid password"}
                 )
-            
+
             access_token, expire_in = create_access_token(user.id)
             refresh_token = create_refresh_token(user.id)
-            
+
             return JSONResponse(
-                status_code=HTTPStatus.OK, 
+                status_code=HTTPStatus.OK,
                 content={
-                    "message": "Login successful", 
-                    "access_token": access_token, 
+                    "message": "Login successful",
+                    "access_token": access_token,
                     "refresh_token": refresh_token,
-                    "token_type": "bearer", 
+                    "token_type": "bearer",
                     "expire_in": expire_in
                 }
             )
@@ -108,21 +110,21 @@ class AuthService:
     async def verify_email_token(self, token: str, db: AsyncSession):
         try:
             user_id = verify_token(token)
-            
+
             if not user_id:
                 return JSONResponse(
                     status_code=HTTPStatus.BAD_REQUEST,
                     content={"message": "Invalid token"}
                 )
-            
+
             user = await self.repository.get_user_by_user_id(user_id, db)
-            
+
             if not user:
                 return JSONResponse(
                     status_code=HTTPStatus.NOT_FOUND,
                     content={"message": "User not found"}
                 )
-            
+
             if user.email_verified:
                 return JSONResponse(
                     status_code=HTTPStatus.CONFLICT,
@@ -131,7 +133,7 @@ class AuthService:
 
             await self.repository.update_user_email_verification(user, db)
             await self.repository.update_user_status_to_active(user, db)
-            
+
             return JSONResponse(
                 status_code=HTTPStatus.OK,
                 content={"message": "Email verified successfully"}
@@ -142,18 +144,17 @@ class AuthService:
                 content={"message": f"Internal server error. ERROR: {e}"}
             )
 
-
     async def refresh_access_token(self, refresh_token: str, db: AsyncSession):
         try:
             payload = jwt.decode(refresh_token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
             user_id = payload.get("sub")
-            
+
             if not user_id or not user_id.isdigit():
                 return JSONResponse(
                     status_code=HTTPStatus.BAD_REQUEST,
                     content={"message": "Invalid token subject"}
                 )
-            
+
             user_id = int(user_id)
             user = await self.repository.get_user_by_user_id(user_id, db)
 
@@ -164,7 +165,7 @@ class AuthService:
                 )
 
             access_token, expire_in = create_access_token(user_id)
-            
+
             return JSONResponse(
                 status_code=HTTPStatus.OK,
                 content={"access_token": access_token, "token_type": "bearer", "expire_in": expire_in}
@@ -179,6 +180,47 @@ class AuthService:
             return JSONResponse(
                 status_code=HTTPStatus.UNAUTHORIZED,
                 content={"message": "Invalid refresh token"}
+            )
+        except Exception as e:
+            return JSONResponse(
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                content={"message": f"Internal server error. ERROR: {e}"}
+            )
+
+    async def validate_user_token(self, token: str, db: AsyncSession):
+        try:
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
+            user_id = payload.get("sub")
+
+            if not user_id or not user_id.isdigit():
+                return JSONResponse(
+                    status_code=HTTPStatus.BAD_REQUEST,
+                    content={"message": "Invalid token subject"}
+                )
+
+            user_id = int(user_id)
+            user = await self.repository.get_user_by_user_id(user_id, db)
+
+            if user is None:
+                return JSONResponse(
+                    status_code=HTTPStatus.NOT_FOUND,
+                    content={"message": "User not found"}
+                )
+
+            return JSONResponse(
+                status_code=HTTPStatus.OK,
+                content={"message": "Success"}
+            )
+
+        except jwt.ExpiredSignatureError:
+            return JSONResponse(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                content={"message": "Token expired"}
+            )
+        except jwt.InvalidTokenError:
+            return JSONResponse(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                content={"message": "Invalid token"}
             )
         except Exception as e:
             return JSONResponse(
