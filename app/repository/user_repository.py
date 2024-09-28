@@ -19,7 +19,7 @@ class UserRepository:
         return new_user
 
     async def get_user_by_email(self, email: str, db: AsyncSession) -> User:
-        query = select(User).where(User.email == email)
+        query = select(User).where(User.email == email, User.deleted_at == None)
         result = await db.execute(query)
         user = result.scalars().first()
         return user
