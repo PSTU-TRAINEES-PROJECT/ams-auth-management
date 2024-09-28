@@ -14,8 +14,6 @@ EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES = get_config().email_verification_token_
 REFRESH_TOKEN_EXPIRE_DAYS = get_config().refresh_token_expire_days
 
 
-
-
 async def on_startup():
     await check_database_connection()
     print("Application startup: Database connection checked.")
@@ -52,7 +50,7 @@ def create_refresh_token(user_id: int):
     expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode = {"sub": str(user_id), "exp": expire}
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return encoded_jwt, int(expire.timestamp())
 
 
 def verify_token(token: str) -> int:

@@ -89,7 +89,19 @@ class AuthService:
                 )
 
             access_token, expire_in = create_access_token(user.id)
-            refresh_token = create_refresh_token(user.id)
+            refresh_token, expire_in = create_refresh_token(user.id)
+
+            if not access_token:
+                return JSONResponse(
+                    status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                    content={"message": "Could not create access token. Please try again"}
+                )
+
+            if not refresh_token:
+                return JSONResponse(
+                    status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                    content={"message": "Could not create access token. Please try again"}
+                )
 
             return JSONResponse(
                 status_code=HTTPStatus.OK,
@@ -146,9 +158,8 @@ class AuthService:
 
     async def refresh_access_token(self, refresh_token: str, db: AsyncSession):
         try:
-            payload = jwt.decode(refresh_token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
-            user_id = payload.get("sub")
-
+            user_id = verify_token(refresh_token)
+            
             if not user_id or not user_id.isdigit():
                 return JSONResponse(
                     status_code=HTTPStatus.BAD_REQUEST,
