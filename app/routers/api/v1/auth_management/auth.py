@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, BackgroundTasks
 from repository.database import get_db
 from schemas.auth import UserCreate, UserLogin, Token
 from repository.user_repository import UserRepository
@@ -10,8 +10,8 @@ repository = UserRepository()
 auth_service = AuthService(repository)
 
 @auth_router.post("/signup")
-async def signup(user: UserCreate, db: AsyncSession = Depends(get_db)):
-    return await auth_service.create_user(user, db)
+async def signup(user: UserCreate, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
+    return await auth_service.create_user(user, db, background_tasks)
 
 @auth_router.post("/login", response_model=Token)
 async def login(user: UserLogin, db: AsyncSession = Depends(get_db)):

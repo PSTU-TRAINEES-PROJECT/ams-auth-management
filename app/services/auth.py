@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from fastapi import BackgroundTasks
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.auth import create_access_token, create_email_verification_token, hash_password, verify_password, \
@@ -17,7 +18,7 @@ class AuthService:
     def __init__(self, repository: UserRepository):
         self.repository = repository
 
-    async def create_user(self, user: UserCreate, db: AsyncSession):
+    async def create_user(self, user: UserCreate, db: AsyncSession, background_tasks: BackgroundTasks):
         try:
             user.validate_passwords()
 
@@ -48,7 +49,7 @@ class AuthService:
             new_user = await self.repository.create_user(user_data, db)
 
             verification_token = create_email_verification_token(new_user.id)
-            await send_verification_email(user.email, verification_token)
+            background_tasks.add_task(send_verification_email, user.email, verification_token)
 
             return JSONResponse(
                 status_code=HTTPStatus.CREATED,
