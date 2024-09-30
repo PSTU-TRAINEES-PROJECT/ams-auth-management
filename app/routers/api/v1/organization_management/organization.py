@@ -14,5 +14,6 @@ organization_service = OrganizationService(organization_repository, membership_r
 
 @organization_router.post("/create-organization")
 async def create_organization(name: str, user_id: int, db: AsyncSession = Depends(get_db)):
+    pass
     return await organization_service.create_organization(user_id, name, db)
 
