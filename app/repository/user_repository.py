@@ -36,12 +36,6 @@ class UserRepository:
         user = result.scalars().first()
         return user
     
-    async def get_all_users(self, db: AsyncSession) -> list[User]:
-        query = select(User)
-        result = await db.execute(query)
-        users = result.scalars().all()
-        return users
-
     async def update_user_email_verification(self, user: User, db: AsyncSession):
         user.email_verified = True
         await db.commit()
@@ -52,10 +46,5 @@ class UserRepository:
         await db.commit()
         await db.refresh(user)
     
-    async def update_user_status(self, user: User, status: Status, db: AsyncSession):
-        user.status = status
-        await db.commit()
-        await db.refresh(user)
-
 
 
