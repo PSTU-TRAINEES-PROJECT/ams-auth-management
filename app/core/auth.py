@@ -2,7 +2,6 @@ from repository.database import check_database_connection
 from datetime import datetime, timedelta
 from fastapi import HTTPException
 import jwt
-from pydantic import EmailStr
 from config import get_config
 import bcrypt
 
