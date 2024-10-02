@@ -161,7 +161,7 @@ class AuthService:
     async def refresh_access_token(self, refresh_token: str, db: AsyncSession):
         try:
             user_id = verify_token(refresh_token)
-            
+
             if not user_id or not user_id.isdigit():
                 return JSONResponse(
                     status_code=HTTPStatus.BAD_REQUEST,
@@ -204,14 +204,12 @@ class AuthService:
         try:
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
             user_id = payload.get("sub")
-
-            if not user_id or not user_id.isdigit():
+            if not user_id:
                 return JSONResponse(
                     status_code=HTTPStatus.BAD_REQUEST,
                     content={"message": "Invalid token subject"}
                 )
 
-            user_id = int(user_id)
             user = await self.repository.get_user_by_user_id(user_id, db)
 
             if user is None:
@@ -222,7 +220,7 @@ class AuthService:
 
             return JSONResponse(
                 status_code=HTTPStatus.OK,
-                content={"message": "Success"}
+                content={"id": user.id}
             )
 
         except jwt.ExpiredSignatureError:
