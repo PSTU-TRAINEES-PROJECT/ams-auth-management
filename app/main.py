@@ -1,6 +1,7 @@
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from core.middleware import LogRequestPathMiddleware
 from core import const, auth
 from config import get_config
 from routers.api.v1 import auth_router
@@ -15,6 +16,8 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware, allow_headers=["*"], allow_origins=["*"], allow_methods=["*"]
 )
+
+app.add_middleware(LogRequestPathMiddleware)
 
 app.include_router(
     auth_router,
