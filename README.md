@@ -70,9 +70,18 @@ AMS-USER-MANAGEMENT/
 In the root directory (outside of the `app` folder), create a `.env` file with the following content:
 
 ```env
-PROJECT_TITLE="AMS USER Management"
+PROJECT_TITLE=AMS_AUTH_MANAGEMENT
 BACKEND_PORT=8000
-IS_RELOAD=true
+IS_RELOAD=True
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/ams-database
+JWT_SECRET_KEY=your_secret_key
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=email@gmail.com
+SMTP_PASSWORD=zzzz zzzz zzzz zzzz
+FRONTEND_URL=http://your-frontend-url.com
+EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES=60
 ```
 
 #### 2. Build and Run with Docker:
