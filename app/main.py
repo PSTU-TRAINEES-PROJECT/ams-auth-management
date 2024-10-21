@@ -3,7 +3,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config.configuration import get_config, validation_exception_handler
-from core.middleware import LogRequestPathMiddleware
+from core.middleware import CustomLogRequestPathMiddleware
 from core import const
 from routers.api.v1 import auth_router
 
@@ -18,7 +18,7 @@ app.add_middleware(
     CORSMiddleware, allow_headers=["*"], allow_origins=["*"], allow_methods=["*"]
 )
 
-app.add_middleware(LogRequestPathMiddleware)
+app.add_middleware(CustomLogRequestPathMiddleware)
 
 app.include_router(
     auth_router,
