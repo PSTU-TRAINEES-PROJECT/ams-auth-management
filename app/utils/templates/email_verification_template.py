@@ -4,88 +4,103 @@ VERIFICATION_EMAIL_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Verification</title>
+    <title>Email</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: white;
+        body{
+            font-family: Montserrat, serif;
             margin: 0;
             padding: 0;
         }
-        .email-container {
-            max-width: 600px;
-            margin: 20px auto;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-            padding: 20px;
+        .email-container{
+            padding: 2rem;
         }
-        .header {
+        .email-container-inner{
             text-align: center;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #dddddd;
+            padding: 2rem 3rem 2rem 3rem;
+            border-radius: 1rem; 
+            box-shadow: 0 0 12px 8px #ACA0A040;
+            max-width: 20rem;
+            margin: 0 auto;
         }
-        .header h1 {
-            color: #333333;
-            margin: 0;
-            font-size: 24px;
-        }
-        .content {
-            padding: 20px;
-            color: #555555;
-            line-height: 1.6;
-            text-align: left;
-        }
-        .button-container {
+        .email-container-inner-imgDiv{
             text-align: center;
-            padding: 20px 0;
+            margin: 0 auto;
         }
-        .verify-button {
-            background-color: White;   /* Button color black */
-            color: black;            /* Text color white */
-            padding: 12px 24px;
-            font-size: 16px;
-            border: none;
-            border-radius: 4px;
+        .email-container-inner-imgDiv img{
+            width: 60px;
+            height: 60px;
+            display: inline-block;
+            margin: 0 auto;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .bouncy {
+            animation: bounce 2s infinite;
+        }
+        .email-container-inner-textDiv h3{
+            font-size: 1.5rem;
+            color: #3498DB; 
+            font-weight: 500;
+        }
+        .email-container-inner-textDiv p{
+            color: #595959; 
+            font-size: 0.8rem;
+        }
+        .email-container-inner-textDiv span{
+            color: #000;
+            font-weight: bold;
+        }
+        .btn{
+            width: auto; 
+            border: none; 
+            outline: none; 
             cursor: pointer;
-            text-decoration: none;
-            transition: background-color 0.3s; /* Smooth transition for hover effect */
+            padding: 0.6rem 1.5rem 0.6rem 1.5rem; 
+            background-color: #3498DB; 
+            color: #fff; 
+            border-radius: 0.5rem; 
+            font-size: 0.8rem; 
+            font-weight: bold;
+            margin-top: 0.5rem;
         }
-        .footer {
-            text-align: center;
-            font-size: 12px;
-            color: #777777;
-            margin-top: 20px;
-            border-top: 1px solid #dddddd;
-            padding-top: 20px;
-        }
-        .footer a {
-            text-decoration: none;
-        }
-        .footer a:hover {
-            text-decoration: underline;
+        .btn:hover
+        {
+            background-color: #268bcf;
         }
     </style>
+
 </head>
 <body>
     <div class="email-container">
-        <div class="header">
-            <h1>Email Verification</h1>
+        <div class="email-container-inner">
+          <div class="email-container-inner-imgDiv">
+            <img src="https://i.ibb.co.com/yXqHRnG/email.png" alt="envelope icon" class="bouncy" style="display: inline-block; margin: 0 auto;">
+          </div>
+           <div class="email-container-inner-textDiv">
+               <h3>Hi {{user_name}},</h3>
+               <p>Thank you for registering with AMS! 
+               <br/>To complete your registration, please verify your email address by clicking the button below.</p>
+           </div>
+           <a href="{{verification_url}}" style="text-decoration: none;">
+            <button class="btn">Verify Email</button>
+            </a>
         </div>
-        <div class="content">
-            <p>Hi {{user_name}},</p>
-            <p>Thank you for registering with AMS! To complete your registration, please verify your email address by clicking the button below.</p>
-            <div class="button-container">
-                <a href="{{verification_url}}" class="verify-button">Verify Email</a>
-            </div>
-            <p>If you did not create an account, you can safely ignore this email. If you have any questions, feel free to contact our support team.</p>
-            <p>Best Regards,<br>The AMS Team</p>
-        </div>
-        <div class="footer">
-            <p>Need help? <a href="mailto:support@ams.com">Contact Support</a></p>
-            <p>&copy; 2024 AMS, Inc. All rights reserved.</p>
-        </div>
-    </div>
+     </div>
 </body>
 </html>
 """
