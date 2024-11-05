@@ -61,3 +61,14 @@ class UserCreate(BaseModel):
             return True
         else:
             return False
+
+
+class GoogleLogin(BaseModel):
+    code: str
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "code": "0AfJohXnxk1yF9...",
+            }
+        }

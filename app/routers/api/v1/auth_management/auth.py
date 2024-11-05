@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, BackgroundTasks
 from repository.database import get_db
-from schemas.auth import UserCreate, UserLogin, Token
+from schemas.auth import GoogleLogin, UserCreate, UserLogin, Token
 from repository.user_repository import UserRepository
 from services.auth import AuthService
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,3 +28,8 @@ async def renew_refresh_token(refresh_token: str, db: AsyncSession = Depends(get
 @auth_router.post("/validate_token")
 async def validate_user_token(token:str,db:AsyncSession = Depends(get_db)):
     return await auth_service.validate_user_token(token,db)
+
+
+@auth_router.post("/google-login")
+async def google_login(login_data: GoogleLogin, db: AsyncSession = Depends(get_db)):
+    return await auth_service.google_login(login_data.code, db)

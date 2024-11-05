@@ -1,7 +1,10 @@
 from http import HTTPStatus
+import secrets
 from fastapi import BackgroundTasks
 from fastapi.responses import JSONResponse
+import requests
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.config import get_config
 from core.auth import create_access_token, create_email_verification_token, hash_password, verify_password, \
     verify_token, create_refresh_token
 from utils.helpers.enums import Status
@@ -251,6 +254,68 @@ class AuthService:
                 status_code=HTTPStatus.UNAUTHORIZED,
                 content={"message": "Invalid token"}
             )
+        except Exception as e:
+            return JSONResponse(
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                content={"message": f"Internal server error. ERROR: {e}"}
+            )
+
+
+    async def google_login(self, auth_code: str, db: AsyncSession):
+        try:
+            google_client_id = get_config().google_client_id
+            google_client_secret = get_config().google_client_secret
+
+            token_data = {
+                'code': auth_code,
+                'client_id': google_client_id,
+                'client_secret': google_client_secret,
+                'redirect_uri': 'postmessage',
+                'grant_type': 'authorization_code'
+            }
+
+            token_response = requests.post('https://oauth2.googleapis.com/token', data=token_data)
+            if token_response.status_code != 200:
+                return JSONResponse(
+                    status_code=HTTPStatus.BAD_REQUEST,
+                    content={"message": "Failed to validate Google OAuth2 token"}
+                )
+
+            token_info = token_response.json()
+            
+            headers = {'Authorization': f'Bearer {token_info["access_token"]}'}
+            userinfo_response = requests.get('https://www.googleapis.com/oauth2/v3/userinfo', headers=headers)
+            user_info = userinfo_response.json()
+
+            user = await self.repository.get_user_by_email(user_info['email'], db)
+
+            if not user:
+                user_data = {
+                    "username": user_info['name'].lower().replace(" ", "_"),
+                    "email": user_info['email'],
+                    "first_name": user_info['given_name'],
+                    "last_name": user_info['family_name'],
+                    "password": hash_password(secrets.token_urlsafe(32)), 
+                    "email_verified": True 
+                }
+                user = await self.repository.create_user(user_data, db)
+                await self.repository.update_user_status_to_active(user, db)
+
+            access_token, access_token_expire_in = create_access_token(user.id)
+            refresh_token, refresh_token_expire_in = create_refresh_token(user.id)
+
+            return JSONResponse(
+                status_code=HTTPStatus.OK,
+                content={
+                    "message": "Google login successful",
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                    "token_type": "bearer",
+                    "aceess_token_expire_in": access_token_expire_in,
+                    "refresh_token_expire_in": refresh_token_expire_in
+                }
+            )
+
         except Exception as e:
             return JSONResponse(
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
