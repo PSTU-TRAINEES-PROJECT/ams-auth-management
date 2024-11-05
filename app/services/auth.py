@@ -35,17 +35,9 @@ class AuthService:
                     content={"message": f"User with email {user.email} already exists"}
                 )
 
-            existing_user_by_username = await self.repository.get_user_by_username(user.username, db)
-            if existing_user_by_username:
-                return JSONResponse(
-                    status_code=HTTPStatus.CONFLICT,
-                    content={"message": f"User with username {user.username} already exists"}
-                )
-
             hashed_password = hash_password(user.password)
 
             user_data = {
-                "username": user.username,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "email": user.email,
@@ -55,7 +47,7 @@ class AuthService:
             new_user = await self.repository.create_user(user_data, db)
 
             verification_token = create_email_verification_token(new_user.id)
-            background_tasks.add_task(send_verification_email, user.username, user.email, verification_token)
+            background_tasks.add_task(send_verification_email, user.first_name, user.email, verification_token)
 
             return JSONResponse(
                 status_code=HTTPStatus.CREATED,
@@ -199,6 +191,7 @@ class AuthService:
             return JSONResponse(
                 status_code=HTTPStatus.OK,
                 content={
+                    "message": "Token refreshed successfully",
                     "access_token": access_token,
                     "refresh_token": new_refresh_token,
                     "token_type": "bearer",
@@ -293,7 +286,6 @@ class AuthService:
 
             if not user:
                 user_data = {
-                    "username": user_info['name'].lower().replace(" ", "_"),
                     "email": user_info['email'],
                     "first_name": user_info['given_name'],
                     "last_name": user_info['family_name'],
@@ -332,6 +324,7 @@ class AuthService:
             return JSONResponse(
                 status_code=HTTPStatus.OK,
                 content={
+                    "message": "Enums fetched successfully",
                     "status": enum_to_dict(Status),
                     "role": enum_to_dict(Role),
                     "platformTypes": enum_to_dict(PlatformTypes)

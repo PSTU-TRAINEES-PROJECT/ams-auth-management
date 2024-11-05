@@ -20,12 +20,11 @@ class UserLogin(BaseModel):
         schema_extra = {
             "example": {
                 "email": "johndoe@example.com",
-                "password": "strongpassword123"
+                "password": "S@trongpassword123"
             }
         }
 
 class UserCreate(BaseModel):
-    username: constr(min_length=3) # type: ignore
     first_name: constr(min_length=3) # type: ignore
     last_name: constr(min_length=3) # type: ignore
     email: EmailStr
@@ -35,12 +34,11 @@ class UserCreate(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "username": "John",
                 "first_name": "John",
                 "last_name": "Doe",
                 "email": "johndoe@example.com",
-                "password": "strongpassword123",
-                "confirm_password": "strongpassword123"
+                "password": "S@trongpassword123",
+                "confirm_password": "S@trongpassword123"
             }
         }
     
