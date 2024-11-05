@@ -42,5 +42,10 @@ class UserRepository:
         await db.commit()
         await db.refresh(user)
     
+    async def update_user_password(self, user: User, new_password: str, db: AsyncSession):
+        user.password_hash = new_password
+        await db.commit()
+        await db.refresh(user)
+    
 
 

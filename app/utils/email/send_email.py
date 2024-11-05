@@ -1,4 +1,5 @@
 from utils.templates.email_verification_template import VERIFICATION_EMAIL_TEMPLATE
+from utils.templates.password_reset_template import PASSWORD_RESET_TEMPLATE
 from config import get_config
 import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
@@ -29,5 +30,24 @@ async def send_verification_email(username: str, email: str, token: str):
         return
     except ApiException as e:
         print(f"Error sending email: {e}")
+        return
+
+async def send_password_reset_email(username: str, email: str, token: str):
+    reset_url = f"{config.frontend_url}/reset-password?token={token}"
+    
+    sender = {"name": "AMS", "email": config.email_sender}
+    subject = "Password Reset Request From AMS"
+    to = [{"email": email, "name": username}]
+
+    body = PASSWORD_RESET_TEMPLATE.replace("{{reset_url}}", reset_url).replace("{{user_name}}", username)
+    
+    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(to=to, html_content=body, sender=sender, subject=subject)
+    
+    try:
+        api_response = api_instance.send_transac_email(send_smtp_email)
+        print("Password reset email sent successfully!")
+        return
+    except ApiException as e:
+        print(f"Error sending password reset email: {e}")
         return
 

@@ -62,3 +62,22 @@ def verify_token(token: str) -> int:
         print("Token is invalid")
         raise e
 
+def verify_token_for_password_reset(token: str):
+    try:
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
+        return payload.get("sub"), payload.get("type")
+    except jwt.ExpiredSignatureError as e:
+        print("Token has expired")
+        raise e
+    except jwt.InvalidTokenError as e:
+        print("Token is invalid")
+        raise e
+
+
+def create_password_reset_token(user_id: int):
+    to_encode = {"sub": user_id, "type": "password_reset"}
+    expire = datetime.utcnow() + timedelta(minutes=15)  # 15 minutes expiry
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
