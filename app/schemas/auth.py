@@ -1,5 +1,6 @@
+import re
 from typing import Optional
-from pydantic import BaseModel, EmailStr, constr
+from pydantic import BaseModel, EmailStr, constr, validator
 
 class Token(BaseModel):
     message: Optional[str] = None
@@ -24,9 +25,9 @@ class UserLogin(BaseModel):
         }
 
 class UserCreate(BaseModel):
-    username: str
-    first_name: str
-    last_name: str
+    username: constr(min_length=3) # type: ignore
+    first_name: constr(min_length=3) # type: ignore
+    last_name: constr(min_length=3) # type: ignore
     email: EmailStr
     password: constr(min_length=8) # type: ignore
     confirm_password: str
@@ -42,7 +43,32 @@ class UserCreate(BaseModel):
                 "confirm_password": "strongpassword123"
             }
         }
+    
+    @validator('password')
+    def password_complexity(cls, value):
+        if not re.search(r'[A-Z]', value):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not re.search(r'[a-z]', value):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not re.search(r'\d', value):
+            raise ValueError('Password must contain at least one number')
+        if not re.search(r'[^\w\s]', value):
+            raise ValueError('Password must contain at least one special character')
+        return value
 
     def validate_passwords(self):
-        if self.password != self.confirm_password:
-            raise ValueError("Passwords & confirm passwords do not match")
+        if self.password == self.confirm_password:
+            return True
+        else:
+            return False
+
+
+class GoogleLogin(BaseModel):
+    code: str
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "code": "0AfJohXnxk1yF9...",
+            }
+        }
