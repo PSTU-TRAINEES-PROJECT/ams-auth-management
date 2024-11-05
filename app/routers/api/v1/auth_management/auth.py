@@ -33,3 +33,10 @@ async def validate_user_token(token:str,db:AsyncSession = Depends(get_db)):
 @auth_router.post("/google-login")
 async def google_login(login_data: GoogleLogin, db: AsyncSession = Depends(get_db)):
     return await auth_service.google_login(login_data.code, db)
+
+
+@auth_router.get("/get-all-enums")
+async def get_all_enums():
+    return await auth_service.get_all_enums()
+
+

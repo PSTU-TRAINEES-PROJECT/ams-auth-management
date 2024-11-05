@@ -1,13 +1,15 @@
 from http import HTTPStatus
 import secrets
+from typing import Dict
 from fastapi import BackgroundTasks
 from fastapi.responses import JSONResponse
 import requests
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.config import get_config
+from config import get_config
+from utils.helpers.get_enum import enum_to_dict
 from core.auth import create_access_token, create_email_verification_token, hash_password, verify_password, \
     verify_token, create_refresh_token
-from utils.helpers.enums import Status
+from utils.helpers.enums import Status, Role, PlatformTypes
 from repository.user_repository import UserRepository
 from schemas.auth import UserCreate, UserLogin
 from utils.email.send_email import send_verification_email
@@ -316,6 +318,25 @@ class AuthService:
                 }
             )
 
+        except Exception as e:
+            return JSONResponse(
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                content={"message": f"Internal server error. ERROR: {e}"}
+            )
+
+
+
+
+    async def get_all_enums(self) -> Dict:
+        try:
+            return JSONResponse(
+                status_code=HTTPStatus.OK,
+                content={
+                    "status": enum_to_dict(Status),
+                    "role": enum_to_dict(Role),
+                    "platformTypes": enum_to_dict(PlatformTypes)
+                }
+            )
         except Exception as e:
             return JSONResponse(
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
