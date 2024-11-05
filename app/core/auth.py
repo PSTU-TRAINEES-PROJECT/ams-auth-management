@@ -1,6 +1,5 @@
 from repository.database import check_database_connection
 from datetime import datetime, timedelta
-from fastapi import HTTPException
 import jwt
 from config import get_config
 import bcrypt
@@ -10,7 +9,7 @@ JWT_SECRET_KEY = get_config().jwt_secret_key
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = get_config().access_token_expire_minutes
 EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES = get_config().email_verification_token_expire_minutes
-REFRESH_TOKEN_EXPIRE_DAYS = get_config().refresh_token_expire_days
+REFRESH_TOKEN_EXPIRE_MINUTES = get_config().refresh_token_expire_minutes
 
 
 async def on_startup():
@@ -46,8 +45,8 @@ def create_email_verification_token(user_id: int):
 
 
 def create_refresh_token(user_id: int):
-    expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    to_encode = {"sub": str(user_id), "exp": expire}
+    expire = datetime.utcnow() + timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
+    to_encode = {"sub": user_id, "exp": expire}
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt, int(expire.timestamp())
 
@@ -55,11 +54,30 @@ def create_refresh_token(user_id: int):
 def verify_token(token: str) -> int:
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
-        if payload.get("sub") is None:
-            raise HTTPException(status_code=401, detail="Token is invalid")
         return payload.get("sub")
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token has expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Token is invalid")
+    except jwt.ExpiredSignatureError as e:
+        print("Token has expired")
+        raise e
+    except jwt.InvalidTokenError as e:
+        print("Token is invalid")
+        raise e
+
+def verify_token_for_password_reset(token: str):
+    try:
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
+        return payload.get("sub"), payload.get("type")
+    except jwt.ExpiredSignatureError as e:
+        print("Token has expired")
+        raise e
+    except jwt.InvalidTokenError as e:
+        print("Token is invalid")
+        raise e
+
+
+def create_password_reset_token(user_id: int):
+    to_encode = {"sub": user_id, "type": "password_reset"}
+    expire = datetime.utcnow() + timedelta(minutes=15)  # 15 minutes expiry
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 

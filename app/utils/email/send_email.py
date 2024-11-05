@@ -1,30 +1,53 @@
-import aiosmtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from utils.templates.email_verification_template import VERIFICATION_EMAIL_TEMPLATE
+from utils.templates.password_reset_template import PASSWORD_RESET_TEMPLATE
 from config import get_config
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
+
+config = get_config()
+
+# Create a brevo API configuration
+configuration = sib_api_v3_sdk.Configuration()
+configuration.api_key['api-key'] = config.brevo_api_key
+api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
 
 
-async def send_verification_email(email: str, token: str):
-    config = get_config()
+async def send_verification_email(username: str, email: str, token: str):
+    
     verification_url = f"{config.frontend_url}/verify-email?token={token}"
     
-    message = MIMEMultipart()
-    message["From"] = config.smtp_user
-    message["To"] = email
-    message["Subject"] = "Email Verification From AMS"
+    sender = {"name": "AMS", "email": config.email_sender}
+    subject = "Email Verification From AMS"
+    to = [{"email": email, "name": username}]
 
-    body = VERIFICATION_EMAIL_TEMPLATE.format(verification_url=verification_url)
-
-    message.attach(MIMEText(body, "plain"))
+    body = VERIFICATION_EMAIL_TEMPLATE.replace("{{verification_url}}", verification_url).replace("{{user_name}}", username)
     
-    print("Sending verification email...")
-    await aiosmtplib.send(
-        message,
-        hostname=config.smtp_server,
-        port=config.smtp_port,
-        username=config.smtp_user,
-        password=config.smtp_password,
-        start_tls=True,
-        
-    )
+    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(to=to, html_content=body, sender=sender, subject=subject)
+    
+    try:
+        api_response = api_instance.send_transac_email(send_smtp_email)
+        print("Email sent successfully!")
+        return
+    except ApiException as e:
+        print(f"Error sending email: {e}")
+        return
+
+async def send_password_reset_email(username: str, email: str, token: str):
+    reset_url = f"{config.frontend_url}/reset-password?token={token}"
+    
+    sender = {"name": "AMS", "email": config.email_sender}
+    subject = "Password Reset Request From AMS"
+    to = [{"email": email, "name": username}]
+
+    body = PASSWORD_RESET_TEMPLATE.replace("{{reset_url}}", reset_url).replace("{{user_name}}", username)
+    
+    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(to=to, html_content=body, sender=sender, subject=subject)
+    
+    try:
+        api_response = api_instance.send_transac_email(send_smtp_email)
+        print("Password reset email sent successfully!")
+        return
+    except ApiException as e:
+        print(f"Error sending password reset email: {e}")
+        return
+

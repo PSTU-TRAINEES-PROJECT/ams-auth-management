@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, BackgroundTasks
 from repository.database import get_db
-from schemas.auth import UserCreate, UserLogin, Token
+from schemas.auth import GoogleLogin, UserCreate, UserLogin, Token, ForgotPassword, ResetPassword
 from repository.user_repository import UserRepository
 from services.auth import AuthService
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,3 +28,27 @@ async def renew_refresh_token(refresh_token: str, db: AsyncSession = Depends(get
 @auth_router.post("/validate_token")
 async def validate_user_token(token:str,db:AsyncSession = Depends(get_db)):
     return await auth_service.validate_user_token(token,db)
+
+
+@auth_router.post("/google-login")
+async def google_login(login_data: GoogleLogin, db: AsyncSession = Depends(get_db)):
+    return await auth_service.google_login(login_data.code, db)
+
+
+@auth_router.get("/get-all-enums")
+async def get_all_enums():
+    return await auth_service.get_all_enums()
+
+@auth_router.post("/forgot-password")
+async def forgot_password(
+    email_data: ForgotPassword,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db)
+):
+    return await auth_service.forgot_password(email_data, db, background_tasks)
+
+@auth_router.post("/reset-password")
+async def reset_password(reset_data: ResetPassword, db: AsyncSession = Depends(get_db)):
+    return await auth_service.reset_password(reset_data, db)
+
+

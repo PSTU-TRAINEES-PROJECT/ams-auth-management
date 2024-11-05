@@ -1,4 +1,4 @@
-VERIFICATION_EMAIL_TEMPLATE = """
+PASSWORD_RESET_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -93,12 +93,15 @@ VERIFICATION_EMAIL_TEMPLATE = """
           </div>
            <div class="email-container-inner-textDiv">
                <h3>Hi {{user_name}},</h3>
-               <p>Thank you for registering with AMS! 
-               <br/>To complete your registration, please verify your email address by clicking the button below.</p>
+               <p>We received a request to reset your password.
+               <br/>This link will expire in 15 minutes. Click the button below to reset it</p>
            </div>
-           <a href="{{verification_url}}" style="text-decoration: none;">
-            <button class="btn">Verify Email</button>
+           <a href="{{reset_url}}" style="text-decoration: none;">
+            <button class="btn">Reset Password</button>
             </a>
+            <div class="email-container-inner-textDiv">
+                <p>If you did not request a password reset, please ignore this email.</p>
+            </div>
         </div>
      </div>
 </body>

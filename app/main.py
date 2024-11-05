@@ -1,9 +1,10 @@
+from fastapi.exceptions import RequestValidationError
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from core.middleware import LogRequestPathMiddleware
-from core import const, auth
-from config import get_config
+from config.configuration import get_config, validation_exception_handler
+from core.middleware import CustomLogRequestPathMiddleware
+from core import const
 from routers.api.v1 import auth_router
 
 
@@ -17,7 +18,7 @@ app.add_middleware(
     CORSMiddleware, allow_headers=["*"], allow_origins=["*"], allow_methods=["*"]
 )
 
-app.add_middleware(LogRequestPathMiddleware)
+app.add_middleware(CustomLogRequestPathMiddleware)
 
 app.include_router(
     auth_router,
@@ -28,6 +29,10 @@ app.include_router(
 # Register the events
 # app.add_event_handler("startup", auth.on_startup)
 # app.add_event_handler("shutdown", auth.on_shutdown)
+
+
+# Register the custom validation error handler
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 
 if __name__ == "__main__":
