@@ -20,12 +20,11 @@ class UserLogin(BaseModel):
         schema_extra = {
             "example": {
                 "email": "johndoe@example.com",
-                "password": "strongpassword123"
+                "password": "S@trongpassword123"
             }
         }
 
 class UserCreate(BaseModel):
-    username: constr(min_length=3) # type: ignore
     first_name: constr(min_length=3) # type: ignore
     last_name: constr(min_length=3) # type: ignore
     email: EmailStr
@@ -35,12 +34,11 @@ class UserCreate(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "username": "John",
                 "first_name": "John",
                 "last_name": "Doe",
                 "email": "johndoe@example.com",
-                "password": "strongpassword123",
-                "confirm_password": "strongpassword123"
+                "password": "S@trongpassword123",
+                "confirm_password": "S@trongpassword123"
             }
         }
     
@@ -72,3 +70,33 @@ class GoogleLogin(BaseModel):
                 "code": "0AfJohXnxk1yF9...",
             }
         }
+
+class ForgotPassword(BaseModel):
+    email: EmailStr
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "email": "johndoe@example.com"
+            }
+        }
+
+class ResetPassword(BaseModel):
+    token: str
+    new_password: constr(min_length=8)  # type: ignore
+    confirm_password: str
+
+    @validator('new_password')
+    def password_complexity(cls, value):
+        if not re.search(r'[A-Z]', value):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not re.search(r'[a-z]', value):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not re.search(r'\d', value):
+            raise ValueError('Password must contain at least one number')
+        if not re.search(r'[^\w\s]', value):
+            raise ValueError('Password must contain at least one special character')
+        return value
+
+    def validate_passwords(self):
+        return self.new_password == self.confirm_password

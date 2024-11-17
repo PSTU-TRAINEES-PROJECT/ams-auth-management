@@ -6,7 +6,6 @@ from sqlalchemy.future import select
 class UserRepository:
     async def create_user(self, user_data: dict, db : AsyncSession) -> User:
         new_user = User(
-            username=user_data.get("username"),
             first_name=user_data.get("first_name"),
             last_name=user_data.get("last_name"),
             email=user_data.get("email"),
@@ -27,12 +26,6 @@ class UserRepository:
         user = result.scalars().first()
         return user
     
-    async def get_user_by_username(self, username: str, db: AsyncSession) -> User:
-        query = select(User).where(User.username == username)
-        result = await db.execute(query)
-        user = result.scalars().first()
-        return user
-    
     async def get_user_by_user_id(self, user_id: int, db: AsyncSession) -> User:
         query = select(User).where(User.id == user_id)
         result = await db.execute(query)
@@ -46,6 +39,11 @@ class UserRepository:
     
     async def update_user_status_to_active(self, user: User, db: AsyncSession):
         user.status = Status.ACTIVE.value
+        await db.commit()
+        await db.refresh(user)
+    
+    async def update_user_password(self, user: User, new_password: str, db: AsyncSession):
+        user.password_hash = new_password
         await db.commit()
         await db.refresh(user)
     

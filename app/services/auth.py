@@ -8,11 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config import get_config
 from utils.helpers.get_enum import enum_to_dict
 from core.auth import create_access_token, create_email_verification_token, hash_password, verify_password, \
-    verify_token, create_refresh_token
+    verify_token, create_refresh_token, create_password_reset_token, verify_token_for_password_reset
 from utils.helpers.enums import Status, Role, PlatformTypes
 from repository.user_repository import UserRepository
-from schemas.auth import UserCreate, UserLogin
-from utils.email.send_email import send_verification_email
+from schemas.auth import UserCreate, UserLogin, ForgotPassword, ResetPassword
+from utils.email.send_email import send_verification_email, send_password_reset_email
 import jwt
 
 
@@ -35,17 +35,9 @@ class AuthService:
                     content={"message": f"User with email {user.email} already exists"}
                 )
 
-            existing_user_by_username = await self.repository.get_user_by_username(user.username, db)
-            if existing_user_by_username:
-                return JSONResponse(
-                    status_code=HTTPStatus.CONFLICT,
-                    content={"message": f"User with username {user.username} already exists"}
-                )
-
             hashed_password = hash_password(user.password)
 
             user_data = {
-                "username": user.username,
                 "first_name": user.first_name,
                 "last_name": user.last_name,
                 "email": user.email,
@@ -55,7 +47,7 @@ class AuthService:
             new_user = await self.repository.create_user(user_data, db)
 
             verification_token = create_email_verification_token(new_user.id)
-            background_tasks.add_task(send_verification_email, user.username, user.email, verification_token)
+            background_tasks.add_task(send_verification_email, user.first_name, user.email, verification_token)
 
             return JSONResponse(
                 status_code=HTTPStatus.CREATED,
@@ -199,6 +191,7 @@ class AuthService:
             return JSONResponse(
                 status_code=HTTPStatus.OK,
                 content={
+                    "message": "Token refreshed successfully",
                     "access_token": access_token,
                     "refresh_token": new_refresh_token,
                     "token_type": "bearer",
@@ -293,7 +286,6 @@ class AuthService:
 
             if not user:
                 user_data = {
-                    "username": user_info['name'].lower().replace(" ", "_"),
                     "email": user_info['email'],
                     "first_name": user_info['given_name'],
                     "last_name": user_info['family_name'],
@@ -332,10 +324,81 @@ class AuthService:
             return JSONResponse(
                 status_code=HTTPStatus.OK,
                 content={
+                    "message": "Enums fetched successfully",
                     "status": enum_to_dict(Status),
                     "role": enum_to_dict(Role),
                     "platformTypes": enum_to_dict(PlatformTypes)
                 }
+            )
+        except Exception as e:
+            return JSONResponse(
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                content={"message": f"Internal server error. ERROR: {e}"}
+            )
+
+    async def forgot_password(self, email_data: ForgotPassword, db: AsyncSession, background_tasks: BackgroundTasks):
+        try:
+            user = await self.repository.get_user_by_email(email_data.email, db)
+            
+            if not user:
+                return JSONResponse(
+                    status_code=HTTPStatus.NOT_FOUND,
+                    content={"message": "User not found"}
+                )
+
+            reset_token = create_password_reset_token(user.id)
+            background_tasks.add_task(
+                send_password_reset_email,
+                user.first_name,
+                email_data.email,
+                reset_token
+            )
+
+            return JSONResponse(
+                status_code=HTTPStatus.OK,
+                content={"message": "Password reset instructions sent to your email"}
+            )
+        except Exception as e:
+            return JSONResponse(
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                content={"message": f"Internal server error. ERROR: {e}"}
+            )
+
+    async def reset_password(self, reset_data: ResetPassword, db: AsyncSession):
+        try:
+            if not reset_data.validate_passwords():
+                return JSONResponse(
+                    status_code=HTTPStatus.BAD_REQUEST,
+                    content={"message": "Passwords do not match"}
+                )
+
+            user_id, token_type = verify_token_for_password_reset(reset_data.token)
+            
+            if not user_id:
+                return JSONResponse(
+                    status_code=HTTPStatus.BAD_REQUEST,
+                    content={"message": "Invalid token subject"}
+                )
+
+            if token_type != "password_reset":
+                return JSONResponse(
+                    status_code=HTTPStatus.BAD_REQUEST,
+                    content={"message": "This is not a password reset token"}
+                )
+
+            user = await self.repository.get_user_by_user_id(user_id, db)
+            if not user:
+                return JSONResponse(
+                    status_code=HTTPStatus.NOT_FOUND,
+                    content={"message": "User not found"}
+                )
+
+            hashed_password = hash_password(reset_data.new_password)
+            await self.repository.update_user_password(user, hashed_password, db)
+
+            return JSONResponse(
+                status_code=HTTPStatus.OK,
+                content={"message": "Password reset successful"}
             )
         except Exception as e:
             return JSONResponse(

@@ -15,15 +15,13 @@ class Config(BaseSettings):
     jwt_secret_key: str
     access_token_expire_minutes: int
     database_url: str
-    smtp_server: str
-    smtp_port: int
-    smtp_user: str
-    smtp_password: str
     frontend_url: str
     email_verification_token_expire_minutes: int
     refresh_token_expire_minutes: int = 30     
     google_client_id: str
     google_client_secret: str
+    brevo_api_key: str
+    email_sender: str
 
     class Config:
         env_path = ".env"
