@@ -22,6 +22,8 @@ class Config(BaseSettings):
     frontend_url: str
     email_verification_token_expire_minutes: int
     refresh_token_expire_minutes: int = 30     
+    google_client_id: str
+    google_client_secret: str
 
     class Config:
         env_path = ".env"

@@ -12,6 +12,9 @@ class UserRepository:
             email=user_data.get("email"),
             password_hash=user_data.get("password"),
         )
+        
+        if "email_verified" in user_data:
+            new_user.email_verified = user_data["email_verified"]
 
         db.add(new_user)
         await db.commit()
