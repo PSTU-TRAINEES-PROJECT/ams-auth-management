@@ -4,14 +4,11 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.auth import create_access_token, create_email_verification_token, hash_password, verify_password, \
     verify_token, create_refresh_token
-
 from utils.helpers.enums import Status
 from repository.user_repository import UserRepository
 from schemas.auth import UserCreate, UserLogin
 from utils.email.send_email import send_verification_email
 import jwt
-from core.auth import JWT_SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, EMAIL_VERIFICATION_TOKEN_EXPIRE_MINUTES, \
-    REFRESH_TOKEN_EXPIRE_DAYS
 
 
 class AuthService:
@@ -20,7 +17,11 @@ class AuthService:
 
     async def create_user(self, user: UserCreate, db: AsyncSession, background_tasks: BackgroundTasks):
         try:
-            user.validate_passwords()
+            if not user.validate_passwords():
+                return JSONResponse(
+                    status_code=HTTPStatus.CONFLICT,
+                    content={"message": "Passwords & confirm passwords do not match"}
+                )
 
             existing_user_by_email = await self.repository.get_user_by_email(user.email, db)
             if existing_user_by_email:
@@ -49,7 +50,7 @@ class AuthService:
             new_user = await self.repository.create_user(user_data, db)
 
             verification_token = create_email_verification_token(new_user.id)
-            background_tasks.add_task(send_verification_email, user.email, verification_token)
+            background_tasks.add_task(send_verification_email, user.username, user.email, verification_token)
 
             return JSONResponse(
                 status_code=HTTPStatus.CREATED,
@@ -128,7 +129,7 @@ class AuthService:
             if not user_id:
                 return JSONResponse(
                     status_code=HTTPStatus.BAD_REQUEST,
-                    content={"message": "Invalid token"}
+                    content={"message": "Invalid token subject"}
                 )
 
             user = await self.repository.get_user_by_user_id(user_id, db)
@@ -152,6 +153,16 @@ class AuthService:
                 status_code=HTTPStatus.OK,
                 content={"message": "Email verified successfully"}
             )
+        except jwt.ExpiredSignatureError:
+            return JSONResponse(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                content={"message": "Email Verification Token expired"}
+            )
+        except jwt.InvalidTokenError:
+            return JSONResponse(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                content={"message": "Invalid email verification token"}
+            )
         except Exception as e:
             return JSONResponse(
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -162,7 +173,7 @@ class AuthService:
         try:
             user_id = verify_token(refresh_token)
 
-            if not user_id or not user_id.isdigit():
+            if not user_id:
                 return JSONResponse(
                     status_code=HTTPStatus.BAD_REQUEST,
                     content={"message": "Invalid token subject"}
@@ -177,11 +188,18 @@ class AuthService:
                     content={"message": "User not found"}
                 )
 
-            access_token, expire_in = create_access_token(user_id)
+            access_token, access_token_expire_in = create_access_token(user_id)
+            new_refresh_token, refresh_token_expire_in = create_refresh_token(user.id)
 
             return JSONResponse(
                 status_code=HTTPStatus.OK,
-                content={"access_token": access_token, "token_type": "bearer", "expire_in": expire_in}
+                content={
+                    "access_token": access_token,
+                    "refresh_token": new_refresh_token,
+                    "token_type": "bearer",
+                    "aceess_token_expire_in": access_token_expire_in,
+                    "refresh_token_expire_in": refresh_token_expire_in
+                }
             )
 
         except jwt.ExpiredSignatureError:
@@ -202,8 +220,8 @@ class AuthService:
 
     async def validate_user_token(self, token: str, db: AsyncSession):
         try:
-            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
-            user_id = payload.get("sub")
+            user_id = verify_token(token)
+            
             if not user_id:
                 return JSONResponse(
                     status_code=HTTPStatus.BAD_REQUEST,
@@ -220,7 +238,7 @@ class AuthService:
 
             return JSONResponse(
                 status_code=HTTPStatus.OK,
-                content={"id": user.id}
+                content={"message": "User token is valid" , "id": user.id, "email": user.email}
             )
 
         except jwt.ExpiredSignatureError:
